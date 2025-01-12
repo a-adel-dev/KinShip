@@ -1,0 +1,80 @@
+Detailed Analysis:
+Total relationships found: 573
+
+Overall Sentiment Distribution:
+Very Positive: 223
+Very Negative: 129
+Neutral: 99
+Positive: 84
+Negative: 38
+
+Analysis by Relationship Type:
+
+AUNTS AND UNCLES:
+Total mentions: 26
+Average sentiment: 3.42
+Sentiment distribution:
+  Very Positive: 11
+  Very Negative: 7
+  Positive: 5
+  Negative: 2
+  Neutral: 1
+
+PARENT:
+Total mentions: 173
+Average sentiment: 3.71
+Sentiment distribution:
+  Very Positive: 85
+  Neutral: 29
+  Very Negative: 25
+  Positive: 18
+  Negative: 16
+
+SPOUSE:
+Total mentions: 133
+Average sentiment: 3.28
+Sentiment distribution:
+  Very Positive: 44
+  Very Negative: 33
+  Neutral: 27
+  Positive: 22
+  Negative: 7
+
+CHILD:
+Total mentions: 197
+Average sentiment: 3.29
+Sentiment distribution:
+  Very Positive: 69
+  Very Negative: 52
+  Positive: 33
+  Neutral: 33
+  Negative: 10
+
+COUSINS:
+Total mentions: 6
+Average sentiment: 3.50
+Sentiment distribution:
+  Neutral: 2
+  Very Positive: 2
+  Very Negative: 1
+  Positive: 1
+
+SIBLING:
+Total mentions: 16
+Average sentiment: 3.12
+Sentiment distribution:
+  Neutral: 4
+  Very Positive: 4
+  Very Negative: 4
+  Positive: 3
+  Negative: 1
+
+GRANDPARENT:
+Total mentions: 22
+Average sentiment: 3.09
+Sentiment distribution:
+  Very Positive: 8
+  Very Negative: 7
+  Neutral: 3
+  Negative: 2
+  Positive: 2
