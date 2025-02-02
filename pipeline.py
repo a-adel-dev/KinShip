@@ -253,7 +253,29 @@ def main():
     # Generate statistics
     stats = analyzer.generate_statistics(results)
     
-    # Print detailed results
+    # Print sentences grouped by relationship type
+    print("\nSentences containing kinship relations:")
+    print("=======================================")
+    
+    # Group sentences by relationship type
+    relations_by_type = defaultdict(list)
+    for result in results:
+        relations_by_type[result['relationship_type']].append({
+            'sentence': result['text'],
+            'term': result['term'],
+            'sentiment': result['overall_sentiment']
+        })
+    
+    # Print sentences for each relationship type
+    for rel_type, sentences in relations_by_type.items():
+        print(f"\n{rel_type.upper()}:")
+        print("-" * len(rel_type))
+        for entry in sentences:
+            print(f"\nSentence: {entry['sentence']}")
+            print(f"Found term: '{entry['term']}'")
+            print(f"Sentiment: {entry['sentiment']}")
+        
+    # Print detailed statistics
     print("\nDetailed Analysis:")
     print(f"Total relationships found: {stats['overall']['total_relationships']}")
     print("\nOverall Sentiment Distribution:")
