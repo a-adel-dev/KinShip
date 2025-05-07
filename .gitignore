@@ -1,0 +1,27 @@
+# Ignore virtual environment
+kinship_env/
+
+# Ignore Python cache and bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore environment and dependency files
+.env
+*.env
+*.venv
+Pipfile.lock
+poetry.lock
+
+# Ignore log files
+*.log
