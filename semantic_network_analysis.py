@@ -3,6 +3,7 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib.gridspec import GridSpec
 import networkx as nx
 from collections import Counter
 from camel_tools.tokenizers.word import simple_word_tokenize
@@ -21,11 +22,11 @@ def normalize_arabic(text):
 
 def frequency_analysis(proverbs, kin_terms, analyzer=None, debug=False):
     counts = Counter()
-    normalized_kin_terms = [normalize_arabic(term) for term in kin_terms]
-    lemma_occurrences = {}
+    normalized_kin_terms = [normalize_arabic(term) for term in kin_terms] if analyzer else kin_terms
+    lemma_occurrences = {}  # Format: {token: [(original_sentence, lemmas)]}
 
     for proverb in proverbs:
-        if analyzer:  # Arabic
+        if analyzer:  # Arabic processing
             proverb_norm = normalize_arabic(proverb)
             tokens = simple_word_tokenize(proverb_norm)
 
@@ -33,17 +34,18 @@ def frequency_analysis(proverbs, kin_terms, analyzer=None, debug=False):
                 analyses = analyzer.analyze(token)
                 valid_lemmas = set()
 
-                # Extract all possible lemmas, including prefixed forms
+                # Extract lemmas from analyses
                 for ana in analyses:
                     if 'lex' in ana:
                         lemma = normalize_arabic(ana['lex'])
                         valid_lemmas.add(lemma)
 
-                # Log token and lemmas
+                # Track lemmas and original sentence for debugging
                 if debug:
-                    lemma_occurrences[token] = list(valid_lemmas)
+                    entry = (proverb.strip(), list(valid_lemmas))  # Store original sentence
+                    lemma_occurrences.setdefault(token, []).append(entry)
 
-                # Match against normalized kin terms
+                # Count kin terms
                 for lemma in valid_lemmas:
                     if lemma in normalized_kin_terms:
                         orig_term = kin_terms[normalized_kin_terms.index(lemma)]
@@ -55,28 +57,75 @@ def frequency_analysis(proverbs, kin_terms, analyzer=None, debug=False):
     return (counts, lemma_occurrences) if debug else counts
 
 def plot_frequency_graph_dual(freq_en, freq_ar):
-    term_pairs = [
-        ('mother', 'أم'), ('father', 'أب'), ('uncle', 'عم'), ('aunt', 'خالة'),
-        ('son', 'ابن'), ('daughter', 'بنت'), ('brother', 'أخ'), ('sister', 'أخت'),
-        ('grandfather', 'جد'), ('grandmother', 'جدة')  # Fixed Arabic terms
+    # Define term groupings (English term: list of Arabic equivalents)
+    term_groups = [
+        ('mother', ['أم']),
+        ('father', ['أب']),
+        ('uncle', ['عم']),
+        ('aunt', ['خالة']),
+        ('son', ['ابن']),
+        ('daughter', ['بنت']),
+        ('brother', ['أخ']),
+        ('sister', ['أخت']),
+        ('grandfather', ['جد']),
+        ('grandmother', ['جدة']),
+        ('husband', ['زوج', 'جوز']),
+        ('wife', ['زوجة', 'مرات']),
+        ('child', ['طفل']),
+        ('nephew', ['ابن الأخ']),
+        ('niece', ['بنت الأخت']),
+        ('stepmother', ['زوجة الأب']),
+        ('stepfather', ['زوج الأم']),
+        ('grandson', ['حفيد']),
+        ('granddaughter', ['حفيدة']),
+        ('father-in-law', ['نسيب']),
+        ('brother-in-law', ['صهر']),
+        ('sister-in-law', ['كنة']),
+        ('twin', ['توأم']),
+        ('bride', ['عروسة']),
+        ('groom', ['عريس']),
+        ('in-laws', ['أصهار']),
+        ('grandchildren', ['أحفاد'])
     ]
 
-    labels = [pair[0] for pair in term_pairs]
-    en_freqs = [freq_en.get(pair[0], 0) for pair in term_pairs]
-    ar_freqs = [freq_ar.get(pair[1], 0) for pair in term_pairs]
+    # Filter and aggregate data
+    filtered_data = []
+    for en_term, ar_terms in term_groups:
+        en_count = freq_en.get(en_term, 0)
+        ar_total = sum(freq_ar.get(term, 0) for term in ar_terms)
+        
+        if en_count > 0 or ar_total > 0:
+            ar_breakdown = ", ".join([f"{term}:{freq_ar.get(term, 0)}" for term in ar_terms])
+            filtered_data.append((en_term, ar_breakdown, en_count, ar_total))
 
-    x = np.arange(len(labels))
+    if not filtered_data:
+        print("No terms with non-zero counts found.")
+        return
+
+    # Print results in table format
+    print("\nKinship Term Frequencies")
+    print("=" * 65)
+    print(f"{'English Term':<20} {'Arabic Breakdown':<25} {'EN Count':<10} {'AR Total':<10}")
+    print("-" * 65)
+    for en_term, ar_breakdown, en_count, ar_total in filtered_data:
+        print(f"{en_term:<20} {ar_breakdown:<25} {en_count:<10} {ar_total:<10}")
+    print("=" * 65 + "\n")
+
+    # Plot graph only (without table)
+    plt.figure(figsize=(12, 6))
+    x = np.arange(len(filtered_data))
     width = 0.35
 
-    plt.figure(figsize=(12, 6))
-    plt.bar(x - width/2, en_freqs, width, label='English', color='skyblue')
-    plt.bar(x + width/2, ar_freqs, width, label='Arabic', color='orange')
+    en_counts = [item[2] for item in filtered_data]
+    ar_totals = [item[3] for item in filtered_data]
+    labels = [item[0] for item in filtered_data]
 
-    plt.xlabel('Kinship Terms')
-    plt.ylabel('Frequency')
-    plt.title('Comparison of Kinship Term Frequencies (English vs Arabic)')
+    plt.bar(x - width/2, en_counts, width, label='English', color='skyblue')
+    plt.bar(x + width/2, ar_totals, width, label='Arabic', color='orange')
+
+    plt.title('Kinship Term Frequency Comparison: English vs Arabic')
+    plt.ylabel('Frequency Count')
     plt.xticks(x, labels, rotation=45, ha='right')
-    plt.tick_params(axis='x', labelsize=10)
     plt.legend()
     plt.tight_layout()
     plt.show()

@@ -28,46 +28,66 @@ analyzer_ar = Analyzer(db)
 proverbs_en = open('english_proverbs.txt', encoding='utf-8').read().splitlines()
 proverbs_ar = open('arabic_proverbs.txt', encoding='utf-8').read().splitlines()
 
-kin_terms_en = ['mother', 'father', 'uncle', 'aunt', 'son', 'daughter', 'brother', 'sister', 'cousin', 'grandfather', 'grandmother']
+kin_terms_en = [
+    'mother', 'father', 'uncle', 'aunt', 'son', 'daughter', 
+    'brother', 'sister', 'cousin', 'grandfather', 'grandmother',
+    'husband', 'wife', 'child', 'nephew', 'niece', 
+    'stepmother', 'stepfather', 'grandson', 'granddaughter',
+    'father-in-law', 'mother-in-law', 'brother-in-law', 'sister-in-law',
+    'twin', 'ancestor', 'descendant'
+]
 kin_terms_ar = [
-    'أب', 'ابن', 'بنت', 'أم', 'أخ', 'أخت', 'جد', 'جدة', 'خال', 'خالة', 'عم', 'عمة',
-    # Add regex patterns for possessive forms:
-    r'ابن\w*', r'أخ\w*', r'أخت\w*'  # Matches "ابنك", "اخوه", etc.
+    # Core terms
+    'أم', 'أب', 'عم', 'خالة', 'ابن', 'بنت', 'أخ', 'أخت', 
+    'جد', 'جدة', 'زوج', 'زوجة', 'طفل', 
+    # Extended terms
+    'ابن الأخ', 'بنت الأخت', 'زوجة الأب', 'زوج الأم', 
+    'حفيد', 'حفيدة', 'نسيب', 'صهر', 'كنة', 'توأم',
+    # Colloquial terms
+    'جوز', 'مرات', 'عروسة', 'عريس', 'أصهار', 'أحفاد',
+    # Regex patterns (matches possessive forms like ابنك, اخوه, etc.)
+    r'ابن\w*', r'أخ\w*', r'أخت\w*', r'جوز\w*', r'مرات\w*'
 ]
 
 
 # --- Semantic Network ---
-freq_en = frequency_analysis(proverbs_en, kin_terms_en)
-# In pipelineV2_5.py
-freq_ar, lemma_debug = frequency_analysis(
-    proverbs_ar, 
-    kin_terms_ar, 
-    analyzer=analyzer_ar, 
-    debug=True
-)
+debug_mode = False  # Set this flag to True/False as needed
 
-print("\nArabic Lemma Debug (Fixed):")
-for token, lemmas in lemma_debug.items():
-    print(f"Token: {token} → Lemmas: {lemmas}")
+if debug_mode:
+    freq_en = frequency_analysis(proverbs_en, kin_terms_en)
+    freq_ar, lemma_debug = frequency_analysis(
+        proverbs_ar, 
+        kin_terms_ar, 
+        analyzer=analyzer_ar, 
+        debug=True
+    )
+    # Print debug info
+    print("\nArabic Lemma Debug:")
+    for token, lemmas in lemma_debug.items():
+        print(f"Token: {token} → Lemmas: {lemmas}")
+else:
+    freq_en = frequency_analysis(proverbs_en, kin_terms_en)
+    freq_ar = frequency_analysis(proverbs_ar, kin_terms_ar, analyzer=analyzer_ar)  # Single return value
+
 
 plot_frequency_graph_dual(freq_en, freq_ar)
 
-G_en = build_cooccurrence_network(proverbs_en, kin_terms_en)
-G_ar = build_cooccurrence_network(proverbs_ar, kin_terms_ar)
+# G_en = build_cooccurrence_network(proverbs_en, kin_terms_en)
+# G_ar = build_cooccurrence_network(proverbs_ar, kin_terms_ar)
 
-plot_cooccurrence_network(G_en, "English")
-plot_cooccurrence_network(G_ar, "Arabic")
+# plot_cooccurrence_network(G_en, "English")
+# plot_cooccurrence_network(G_ar, "Arabic")
 
-# --- Sentiment Analysis ---
-sentiment_en = sentiment_for_kinship(proverbs_en, kin_terms_en)
-sentiment_ar = sentiment_for_kinship(proverbs_ar, kin_terms_ar, analyzer=analyzer_ar)
+# # --- Sentiment Analysis ---
+# sentiment_en = sentiment_for_kinship(proverbs_en, kin_terms_en)
+# sentiment_ar = sentiment_for_kinship(proverbs_ar, kin_terms_ar, analyzer=analyzer_ar)
 
-print("English Sentiment Summary:", sentiment_en)
-print("Arabic Sentiment Summary:", sentiment_ar)
+# print("English Sentiment Summary:", sentiment_en)
+# print("Arabic Sentiment Summary:", sentiment_ar)
 
-# --- Role Classification ---
-roles_en = role_classification(proverbs_en, kin_terms_en, nlp_en)
-roles_ar = role_classification_ar(proverbs_ar, kin_terms_ar, analyzer=analyzer_ar)
+# # --- Role Classification ---
+# roles_en = role_classification(proverbs_en, kin_terms_en, nlp_en)
+# roles_ar = role_classification_ar(proverbs_ar, kin_terms_ar, analyzer=analyzer_ar)
 
-print("English Roles:", roles_en)
-print("Arabic Roles:", roles_ar)
+# print("English Roles:", roles_en)
+# print("Arabic Roles:", roles_ar)
