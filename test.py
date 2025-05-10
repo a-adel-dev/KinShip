@@ -1,19 +1,18 @@
-from pipeline import RelationshipSentimentAnalyzer
+from camel_tools.tokenizers.word import simple_word_tokenize
+from camel_tools.morphology.database import MorphologyDB
+from camel_tools.morphology.analyzer import Analyzer
 
+# Load the built-in MSA (Modern Standard Arabic) database
+#db = MorphologyDB.builtin_db('db-egy-r13')
+db = MorphologyDB.builtin_db('calima-egy-r13')
 
-analyzer = RelationshipSentimentAnalyzer()
+MorphologyDB.list_builtin_dbs()
 
-# Process English file
-print("Processing English file:")
-english_results = analyzer.process_file("english_test.txt")
-english_stats = analyzer.generate_statistics(english_results)
+# Create analyzer using the database
+analyzer = Analyzer(db)
 
-# Process Arabic file
-print("\nProcessing Arabic file:")
-arabic_results = analyzer.process_file("arabic_test.txt")
-arabic_stats = analyzer.generate_statistics(arabic_results)
-
-# Compare results
-print("\nComparison of Results:")
-print(f"English relationships found: {english_stats['overall']['total_relationships']}")
-print(f"Arabic relationships found: {arabic_stats['overall']['total_relationships']}")
+tokens = simple_word_tokenize("ذهبت إلى بيت جدي")
+for token in tokens:
+    analyses = analyzer.analyze(token)
+    if analyses:
+        print(f"{token} → POS: {analyses[0]['pos']}")
