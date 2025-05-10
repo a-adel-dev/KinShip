@@ -25,13 +25,15 @@ nlp_en = spacy.load('en_core_web_lg')
 db = MorphologyDB.builtin_db('calima-egy-r13')
 analyzer_ar = Analyzer(db)
 
+tokens = simple_word_tokenize(proverb)
+
 
 # Load your proverbs data (CSV or TXT)
 proverbs_ar = open('arabic_proverbs.txt', encoding='utf-8').read().splitlines()
 proverbs_en = open('english_proverbs.txt', encoding='utf-8').read().splitlines()
 
 # Define kinship terms (can expand as needed)
-kin_terms_en = ['mother', 'father', 'uncle', 'aunt', 'son', 'daughter', 'brother', 'sister', 'cousin', 'grandfather', 'grandmother']
+kin_terms_en = ['mother', 'father', 'uncle', 'aunt', 'son', 'daughter', 'brother', 'sister', 'cousin', 'grandfather', 'grandmother', 'nephew', 'neice', 'mother-in-law', 'father-in-law', 'sister-in-law', 'brother-in-law']
 kin_terms_ar = ['أم', 'أب', 'خال', 'خالة', 'عم', 'عمة', 'ابن', 'ابنة', 'أخ', 'أخت', 'جد', 'جدة']
 
 # --- 1. Semantic Network Analysis ---

@@ -1,0 +1,34 @@
+# Debugging Arabic Kinship Term Matching with Lemmas
+from camel_tools.tokenizers.word import simple_word_tokenize
+from camel_tools.morphology.database import MorphologyDB
+from camel_tools.morphology.analyzer import Analyzer
+import re
+
+def normalize_arabic(text):
+    text = re.sub(r"[إأآا]", "ا", text)
+    text = re.sub(r"[ى]", "ي", text)
+    text = re.sub(r"[ة]", "ه", text)
+    text = re.sub(r"[ًٌٍَُِّْ]", "", text)
+    return text
+
+# Load analyzer for Egyptian Arabic
+db = MorphologyDB.builtin_db('calima-egy-r13')
+analyzer = Analyzer(db)
+
+# Define kinship terms (unnormalized)
+kin_terms_ar = ['أم', 'أب', 'خال', 'خالة', 'عم', 'عمة', 'ابن', 'ابنة', 'أخ', 'أخت', 'جد', 'جدة']
+normalized_kin_terms = [normalize_arabic(term) for term in kin_terms_ar]
+
+# Load Arabic proverbs
+with open('arabic_proverbs.txt', encoding='utf-8') as f:
+    proverbs_ar = f.read().splitlines()
+
+# Debug output for first 5 proverbs
+for i, proverb in enumerate(proverbs_ar[:5]):
+    print(f"\nProverb {i+1}: {proverb}")
+    tokens = simple_word_tokenize(proverb)
+    for token in tokens:
+        analyses = analyzer.analyze(token)
+        lemmas = {normalize_arabic(ana['lex']) for ana in analyses if 'lex' in ana}
+        match = [term for term in normalized_kin_terms if term in lemmas]
+        print(f"  Token: {token:<10} | Lemmas: {lemmas} | Matches: {match}")
