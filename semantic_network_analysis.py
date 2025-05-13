@@ -1,12 +1,26 @@
+# At the top of ALL Python files
+# -*- coding: utf-8 -*-
+import sys
+import locale
+# Set UTF-8 encoding for the entire environment
+sys.stdout.reconfigure(encoding='utf-8')  # Remove extra closing parenthesis if present
+locale.setlocale(locale.LC_ALL, '')  # Use system default locale
+
+
 # Semantic Network Analysis Module
 import re
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+plt.rcParams.update({
+    'font.family': 'Arial',  # Or 'Times New Roman'
+    'axes.unicode_minus': False
+})
 from matplotlib.gridspec import GridSpec
 import networkx as nx
 from collections import Counter
 from camel_tools.tokenizers.word import simple_word_tokenize
+from itertools import combinations
 
 matplotlib.rcParams['font.family'] = 'Arial'
 matplotlib.rcParams['axes.unicode_minus'] = False
@@ -130,33 +144,231 @@ def plot_frequency_graph_dual(freq_en, freq_ar):
     plt.tight_layout()
     plt.show()
 
-def build_cooccurrence_network(proverbs, kin_terms):
+# def generate_cooccurrence_network(proverbs, kin_terms, language, analyzer=None, freq_counts=None):
+#     """
+#     Generates and plots a co-occurrence network graph for kinship terms
+#     Args:
+#         proverbs: List of proverbs
+#         kin_terms: List of kinship terms in the target language
+#         language: 'English' or 'Arabic'
+#         analyzer: Morphological analyzer (for Arabic only)
+#         freq_counts: Frequency counts from frequency_analysis()
+#     """
+#     # Build co-occurrence network
+#     G = nx.Graph()
+#     co_occur = Counter()
+
+#     # Add nodes with frequency-based sizes
+#     if freq_counts:
+#         for term in kin_terms:
+#             freq = freq_counts.get(term, 0)
+#             G.add_node(term, size=500 + freq*100)  # Adjust scaling factor as needed
+
+#     # Process proverbs
+#     for proverb in proverbs:
+#         # Find kinship terms in proverb
+#         found_terms = []
+        
+#         if language == 'Arabic' and analyzer:
+#             # Arabic processing with morphological analysis
+#             proverb_norm = normalize_arabic(proverb)
+#             tokens = simple_word_tokenize(proverb_norm)
+#             for token in tokens:
+#                 analyses = analyzer.analyze(token)
+#                 for ana in analyses:
+#                     if 'lex' in ana:
+#                         lemma = normalize_arabic(ana['lex'])
+#                         if lemma in kin_terms:
+#                             found_terms.append(lemma)
+#         else:
+#             # English processing with exact word matching
+#             proverb_lower = proverb.lower()
+#             for term in kin_terms:
+#                 if re.search(rf'\b{re.escape(term.lower())}\b', proverb_lower):
+#                     found_terms.append(term)
+
+#         # Create edges between all pairs of found terms
+#         for pair in combinations(sorted(set(found_terms)), 2):
+#             co_occur[pair] += 1
+#             if G.has_edge(*pair):
+#                 G[pair[0]][pair[1]]['weight'] += 1
+#             else:
+#                 G.add_edge(pair[0], pair[1], weight=1)
+
+#     # Plot the network
+#     plt.figure(figsize=(12, 8))
+#     pos = nx.spring_layout(G, k=0.5, iterations=50)  # Adjust layout parameters
+    
+#     # Node sizing
+#     node_sizes = [G.nodes[n].get('size', 500) for n in G.nodes]
+    
+#     # Edge styling
+#     edge_weights = [G[u][v]['weight']*2 for u,v in G.edges()]
+    
+#     nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color='skyblue', alpha=0.9)
+#     nx.draw_networkx_edges(G, pos, width=edge_weights, edge_color='gray', alpha=0.7)
+#     nx.draw_networkx_labels(G, pos, font_size=12, font_family='Arial')
+    
+#     # Add legend and title
+#     plt.title(f'{language} Kinship Term Co-occurrence Network\n(Node size = frequency, Edge width = co-occurrence count)')
+#     plt.axis('off')
+    
+#     # Add frequency legend
+#     plt.text(0.95, 0.95, 
+#              "Node Size Legend:\nSmall: Low frequency\nLarge: High frequency",
+#              transform=plt.gca().transAxes,
+#              ha='right', va='top',
+#              bbox=dict(facecolor='white', alpha=0.8))
+    
+#     plt.show()
+#     return G
+
+def generate_cooccurrence_network(proverbs, kin_terms, language, analyzer=None, 
+                                 freq_counts=None, show_arabic=True):
+    """
+    Generates and plots a co-occurrence network graph for kinship terms
+    
+    Args:
+        proverbs: List of proverbs (list of strings)
+        kin_terms: List of kinship terms in the target language (list of strings)
+        language: 'English' or 'Arabic' (string)
+        analyzer: Morphological analyzer (for Arabic only, camel_tools Analyzer object)
+        freq_counts: Frequency counts from frequency_analysis() (dict)
+        show_arabic: Whether to properly display Arabic text (bool, requires 
+                    arabic-reshaper and python-bidi)
+    
+    Returns:
+        networkx.Graph: The generated co-occurrence network
+    """
+    
+    # Initialize graph
     G = nx.Graph()
+    found_terms_all = set()  # Track terms that actually appear in proverbs
     co_occur = Counter()
 
+    # Add nodes with frequency-based sizes
+    if freq_counts:
+        valid_terms = [term for term in kin_terms if freq_counts.get(term, 0) > 0]
+    else:
+        valid_terms = kin_terms.copy()
+
+    # Add nodes with frequency-based sizes (only for valid terms)
+    if freq_counts:
+        for term in valid_terms:
+            freq = freq_counts[term]
+            G.add_node(term, size=500 + freq * 100)
+
+    # Process proverbs
     for proverb in proverbs:
-        found_terms = [term for term in kin_terms if term in proverb.lower()]
-        for i, term1 in enumerate(found_terms):
-            for term2 in found_terms[i + 1:]:
-                co_occur[(term1, term2)] += 1
-                if G.has_edge(term1, term2):
-                    G[term1][term2]['weight'] += 1
-                else:
-                    G.add_edge(term1, term2, weight=1)
+        found_terms = []
+        
+        if language == 'Arabic' and analyzer:
+            # Arabic processing
+            proverb_norm = normalize_arabic(proverb)
+            tokens = simple_word_tokenize(proverb_norm)
+            for token in tokens:
+                analyses = analyzer.analyze(token)
+                for ana in analyses:
+                    if 'lex' in ana:
+                        lemma = normalize_arabic(ana['lex'])
+                        if lemma in valid_terms:  # Only check valid terms
+                            found_terms.append(lemma)
+        else:
+            # English processing
+            proverb_lower = proverb.lower()
+            for term in valid_terms:  # Only check valid terms
+                if re.search(rf'\b{re.escape(term.lower())}\b', proverb_lower):
+                    found_terms.append(term)
 
-    for term in kin_terms:
-        G.add_node(term, size=co_occur[term] * 100 if term in co_occur else 300)
+        # Track found terms
+        unique_found = list(set(found_terms))  # Deduplicate within proverb
+        found_terms_all.update(unique_found)
 
-    return G
+        # Create edges between all pairs of found terms
+        for pair in combinations(unique_found, 2):
+            co_occur[pair] += 1
+            if G.has_edge(*pair):
+                G[pair[0]][pair[1]]['weight'] += 1
+            else:
+                G.add_edge(pair[0], pair[1], weight=1)
 
-def plot_cooccurrence_network(G, language):
-    plt.figure(figsize=(10, 6))
-    pos = nx.spring_layout(G, seed=42)
-    edges = G.edges()
-    weights = [G[u][v]['weight'] for u, v in edges]
+    # Remove nodes that weren't found in any proverbs
+    nodes_to_remove = [node for node in G.nodes() if node not in found_terms_all]
+    G.remove_nodes_from(nodes_to_remove)
 
-    nx.draw(G, pos, with_labels=True, node_size=[G.nodes[n]['size'] for n in G.nodes], 
-            node_color='skyblue', font_size=12, font_weight='bold', 
-            width=[w * 2 for w in weights], edge_color='gray')
-    plt.title(f'Semantic Co-occurrence Network ({language})')
+    # Only plot if there are nodes remaining
+    if len(G.nodes()) == 0:
+        print(f"No valid co-occurrences found for {language} terms")
+        return G
+
+    # Set up visualization
+    plt.figure(figsize=(12, 8))
+    pos = nx.spring_layout(G, k=0.5, iterations=50, seed=42)
+    
+    # Configure labels based on language and settings
+    labels = {}
+    font_props = {'font_size': 12, 'font_weight': 'bold'}
+    
+    if language == 'Arabic' and show_arabic:
+        try:
+            from arabic_reshaper import reshape
+            from bidi.algorithm import get_display
+            labels = {n: get_display(reshape(n)) for n in G.nodes}
+            font_props['font_family'] = 'Arial'
+        except ImportError:
+            print("Warning: Arabic display requires packages - run:")
+            print("pip install arabic-reshaper python-bidi")
+            labels = {n: n for n in G.nodes}
+            font_props['font_family'] = 'DejaVu Sans'
+    else:
+        labels = {n: n for n in G.nodes}
+        font_props['font_family'] = 'Arial'
+
+    # Draw elements
+    nx.draw_networkx_nodes(
+        G, pos,
+        node_size=[G.nodes[n].get('size', 500) for n in G.nodes],
+        node_color='skyblue',
+        alpha=0.9
+    )
+    
+    nx.draw_networkx_edges(
+        G, pos,
+        width=[G[u][v]['weight'] * 2 for u, v in G.edges()],
+        edge_color='gray',
+        alpha=0.7
+    )
+    
+    nx.draw_networkx_labels(
+        G, pos,
+        labels=labels,
+        **font_props
+    )
+
+    # Add title and legend
+    plt.title(
+        f'{language} Kinship Term Co-occurrence Network\n'
+        '(Node size = frequency, Edge width = co-occurrence count)',
+        pad=20
+    )
+    
+    plt.axis('off')
+    
+    # Add explanatory text
+    legend_text = [
+        "Node Size Legend:",
+        "Small: Low frequency",
+        "Large: High frequency"
+    ]
+    
+    plt.text(
+        0.95, 0.95, 
+        '\n'.join(legend_text),
+        transform=plt.gca().transAxes,
+        ha='right', va='top',
+        bbox=dict(facecolor='white', alpha=0.8))
+    
+    plt.tight_layout()
     plt.show()
+    
+    return G

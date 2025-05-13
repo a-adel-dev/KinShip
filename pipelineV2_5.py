@@ -1,12 +1,22 @@
+# At the top of ALL Python files
+# -*- coding: utf-8 -*-
+import sys
+import locale
+# Set UTF-8 encoding for the entire environment
+sys.stdout.reconfigure(encoding='utf-8')  # Remove extra closing parenthesis if present
+locale.setlocale(locale.LC_ALL, '')  # Use system default locale
+
+
 # Coordinating Script for Full Kinship Analysis
 import re
 import spacy
 from transformers import pipeline
 from camel_tools.morphology.database import MorphologyDB
 from camel_tools.morphology.analyzer import Analyzer
+from itertools import combinations
 
-from semantic_network_analysis import frequency_analysis, plot_frequency_graph_dual, build_cooccurrence_network, plot_cooccurrence_network
-from sentiment_analysis import sentiment_for_kinship
+from semantic_network_analysis import frequency_analysis, plot_frequency_graph_dual, generate_cooccurrence_network
+from sentiment_analysis import sentiment_for_kinship, export_sentiment_results
 from role_classification import role_classification, role_classification_ar
 
 from camel_tools.tokenizers.word import simple_word_tokenize
@@ -69,21 +79,51 @@ else:
     freq_en = frequency_analysis(proverbs_en, kin_terms_en)
     freq_ar = frequency_analysis(proverbs_ar, kin_terms_ar, analyzer=analyzer_ar)  # Single return value
 
+######################
+# # Plot frequency graphs
+#########################
 
-plot_frequency_graph_dual(freq_en, freq_ar)
 
-# G_en = build_cooccurrence_network(proverbs_en, kin_terms_en)
-# G_ar = build_cooccurrence_network(proverbs_ar, kin_terms_ar)
+# plot_frequency_graph_dual(freq_en, freq_ar)
 
-# plot_cooccurrence_network(G_en, "English")
-# plot_cooccurrence_network(G_ar, "Arabic")
+# # English network
+# G_en = generate_cooccurrence_network(
+#     proverbs_en, 
+#     kin_terms_en, 
+#     language='English',
+#     freq_counts=freq_en,
+#     show_arabic=True
+# )
 
-# # --- Sentiment Analysis ---
-# sentiment_en = sentiment_for_kinship(proverbs_en, kin_terms_en)
-# sentiment_ar = sentiment_for_kinship(proverbs_ar, kin_terms_ar, analyzer=analyzer_ar)
+# # Arabic network
+# G_ar = generate_cooccurrence_network(
+#     proverbs_ar, 
+#     kin_terms_ar, 
+#     language='Arabic',
+#     analyzer=analyzer_ar,
+#     freq_counts=freq_ar,
+#     show_arabic=True
+# )
 
-# print("English Sentiment Summary:", sentiment_en)
-# print("Arabic Sentiment Summary:", sentiment_ar)
+## --- sentiment analysis ---
+sentiment_df_ar = sentiment_for_kinship(
+    proverbs_ar,
+    kin_terms_ar,
+    lang='ar',
+    analyzer=analyzer_ar,
+    plot_path='arabic_sentiment.png'
+)
+export_sentiment_results(sentiment_df_ar, 'arabic_results.csv', lang='ar')
+
+# For English analysis 
+sentiment_df_en = sentiment_for_kinship(
+    proverbs_en,
+    kin_terms_en,
+    lang='en',
+    plot_path='english_sentiment.png'
+)
+export_sentiment_results(sentiment_df_en, 'english_results.csv')
+
 
 # # --- Role Classification ---
 # roles_en = role_classification(proverbs_en, kin_terms_en, nlp_en)
